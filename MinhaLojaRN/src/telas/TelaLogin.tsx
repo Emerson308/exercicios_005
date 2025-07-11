@@ -1,0 +1,112 @@
+
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useState } from "react";
+import { realizarLogin } from "../servicos/servicoAutenticacao";
+import { salvarToken } from "../servicos/servicoArmazenamento";
+import { StyleSheet } from "react-native";
+
+interface TelaLoginProps {
+    aoLoginSucesso: () => void;
+}
+
+export default function TelaLogin({aoLoginSucesso}: TelaLoginProps){
+
+    const [nomeUsuario, setNomeUsuario] = useState('');
+    const [senhaUsuario, setSenhaUsuario] = useState('');
+    const [carregando, setCarregando] = useState(false);
+    const [mensagemErro, setMensagemErro] = useState('');
+
+    const lidarComLogin = async () => {
+        setCarregando(true);
+        setMensagemErro('');
+        try{
+            const resposta = await realizarLogin({usuario: nomeUsuario, senha: senhaUsuario});
+            await salvarToken(resposta.token);
+            aoLoginSucesso();
+        } catch(erro: any){
+            setMensagemErro(erro.message || 'Erro inesperado. Tente novamente.');
+
+        } finally {
+            setCarregando(false)
+        }
+    };
+
+    return (    
+    <View style={estilos.container}>      
+        <Text style={estilos.titulo}>Login</Text>
+        <TextInput        
+            style={estilos.input}        
+            placeholder="Nome de Usuário"        
+            value={nomeUsuario}        
+            onChangeText={setNomeUsuario}        
+            autoCapitalize="none"
+        />
+
+        <TextInput        
+            style={estilos.input}        
+            placeholder="Senha"        
+            value={senhaUsuario}        
+            onChangeText={setSenhaUsuario}        
+            secureTextEntry
+        />
+            
+        {carregando ? (        
+            <ActivityIndicator size="large" />
+        ) : (        
+            <TouchableOpacity          
+                style={estilos.botao}          
+                onPress={lidarComLogin}          
+                disabled={!nomeUsuario || !senhaUsuario}
+            >          
+                <Text style={estilos.textoBotao}>Entrar</Text>        
+            </TouchableOpacity>
+        )} 
+        {mensagemErro ? 
+        <Text style={estilos.mensagemErro}>{mensagemErro}</Text> : null}    
+    </View>  
+    );
+    } 
+    
+    
+const estilos = StyleSheet.create({  
+    container: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        padding: 20,
+        maxWidth: 600,
+        marginLeft: 'auto',
+        marginRight: 'auto'
+    },
+
+    titulo: { 
+        fontSize: 24, 
+        marginBottom: 20 
+    },
+
+    input: { 
+        width: '100%', 
+        padding: 10, 
+        borderWidth: 1, 
+        borderColor: '#ccc', 
+        borderRadius: 5, 
+        marginBottom: 10 
+    },
+
+    botao: { 
+        width: '100%', 
+        padding: 15, 
+        borderRadius: 5, 
+        alignItems: 'center', 
+        marginTop: 10 
+    },
+
+    textoBotao: { 
+        fontSize: 16 
+    },
+
+    mensagemErro: { 
+        marginTop: 15, 
+        textAlign: 'center' 
+    },
+});
